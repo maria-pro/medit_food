@@ -1,0 +1,234 @@
+---
+title: "Descriptive results"
+author: "Maria"
+format: html
+toc: true
+toc-depth: 3
+code-fold: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Setup
+
+Based on existing search files as provided
+
+## Preliminary results
+
+#### Summarize main results of the bibliometric analysis (Scopus)
+```{r}
+library(bibliometrix)
+library(tidyverse)
+
+files_bib<-list.files(
+  path="new", 
+  pattern="*.bib",
+  full.names=TRUE
+)
+
+bib_data<- lapply(files_bib, function(file){
+  convert2df(file, dbsource = "scopus", format = "bibtex")
+})
+M <- dplyr::bind_rows(bib_data)
+M<-M%>% distinct(url, .keep_all=TRUE)
+
+M_scopus_csv<-convert2df("databases/scopus.csv", dbsource = "scopus", format = "csv")
+
+# main bibliometric measures
+results <- biblioAnalysis(M, sep = ";")
+summary(results, k=10, pause=F, width=130)
+
+```
+
+Based on provided scopus.csv 
+
+```{r}
+
+#based on csv
+
+results_csv <- biblioAnalysis(M_scopus_csv, sep = ";")
+summary(results_csv, k=10, pause=F, width=130)
+```
+
+```{r}
+plot(x=results_csv, k=10, pause=F)
+```
+### Most Cited References
+
+```{r}
+CR <- citations(M, field = "article", sep = ";")
+cbind(CR$Cited[1:20])
+```
+
+
+## The Intellectual Structure of the field - Co-citation Analysis
+
+### Article (References) co-citation analysis
+
+```{r}
+NetMatrix <- biblioNetwork(M_scopus_csv, analysis = "co-citation", network = "references", sep = ";")
+net=networkPlot(NetMatrix, n = 50, Title = "Co-Citation Network", type = "fruchterman", size.cex=TRUE, size=20, remove.multiple=FALSE, labelsize=1,edgesize = 10, edges.min=5)
+```
+
+
+### Co-word Analysis through Keyword co-occurrences
+
+
+The plot uses the main 50 cited references and applies the [Fruchterman-Reingold Algorithm](https://en.wikipedia.org/wiki/Force-directed_graph_drawing) for network generation
+
+
+```{r}
+NetMatrix <- biblioNetwork(M, analysis = "co-occurrences", network = "keywords", sep = ";")
+net=networkPlot(NetMatrix, normalize="association", weighted=T, n = 30, Title = "Keyword Co-occurrences", type = "fruchterman", size=T,edgesize = 5,labelsize=0.7)
+```
+
+
+Descriptive analysis of Article co-citation network characteristics
+
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=10)
+```
+### Journal (Source) co-citation analysis
+
+```{r}
+M_tags=metaTagExtraction(M_scopus_csv,"CR_SO",sep=";")
+NetMatrix <- biblioNetwork(M_tags, analysis = "co-citation", network = "sources", sep = ";")
+
+net=networkPlot(NetMatrix, n = 20, Title = "Co-Citation Network", type = "auto", size.cex=TRUE, size=15, remove.multiple=FALSE, labelsize=1,edgesize = 10, edges.min=5)
+```
+Descriptive analysis of Journal co-citation network characteristics
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=10)
+```
+
+## Historiograph - Direct citation linkages
+
+based on scopus.csv
+
+```{r}
+histResults <- histNetwork(M_scopus_csv, sep = ";")
+
+```
+
+```{r}
+options(width = 130)
+net <- histPlot(histResults, n=20, size = 5, labelsize = 4)
+```
+
+## The conceptual structure - Co-Word Analysis
+
+### Co-word Analysis through Keyword co-occurrences
+
+The network layout is generated using the Fruchterman-Reingold Algorithm)
+
+```{r}
+NetMatrix <- biblioNetwork(M, analysis = "co-occurrences", network = "keywords", sep = ";")
+net=networkPlot(NetMatrix, normalize="association", n = 20, Title = "Keyword Co-occurrences", type = "fruchterman", size.cex=TRUE, size=20, remove.multiple=F, edgesize = 10, labelsize=5,label.cex=TRUE,label.n=30,edges.min=2)
+```
+
+Descriptive analysis of keyword co-occurrences network characteristics
+
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=10)
+
+```
+
+### Co-word Analysis through Correspondence Analysis
+
+```{r}
+suppressWarnings(
+CS <- conceptualStructure(M, method="MCA", field="ID", minDegree=15, clust=5, stemming=FALSE, labelsize=15,documents=20)
+)
+```
+
+
+## Thematic Map
+
+Co-word analysis is used to identify clusters of keywords based on [this](https://www.mdpi.com/2071-1050/14/6/3643) . Clusters are used as themes and their characteristics (e.g. density and centrality) are used in classifying themes and mapping as two-dimensional diagram.
+
+The result is a thematic map which is an intuitive tool to present themes for further analysis based on  the quadrant in which themes are placed: 
+
+(1) upper-right quadrant: motor-themes; 
+
+(2) lower-right quadrant: basic themes; 
+
+(3) lower-left quadrant: emerging or disappearing themes; 
+
+(4) upper-left quadrant: very specialized/niche themes.
+
+```{r}
+Map=thematicMap(M, field = "ID", n = 250, minfreq = 4,
+  stemming = FALSE, size = 0.7, n.labels=5, repel = TRUE)
+plot(Map$map)
+```
+
+Cluster description
+
+```{r}
+Clusters=Map$words[order(Map$words$Cluster,-Map$words$Occurrences),]
+library(dplyr)
+CL <- Clusters %>% group_by(.data$Cluster_Label) %>% top_n(5, .data$Occurrences)
+CL
+```
+
+## The social structure - Collaboration Analysis
+
+Collaboration network analysis evaluates how authors / institutions / countries relate to others in a specific field of research.
+
+Such analysis include generation of a co-author network to evaluate distinct groupings, e.g. regular study groups, hidden groups of scholars, and pivotal authors. 
+
+Further analysis includes generation of the collaboration network which links relevant institutions  in the field and uncover their relations.
+
+### Author collaboration network
+
+```{r}
+NetMatrix <- biblioNetwork(M, analysis = "collaboration",  network = "authors", sep = ";")
+net=networkPlot(NetMatrix,  n = 20, Title = "Author collaboration",type = "auto", size=10,size.cex=T,edgesize = 3,labelsize=1)
+```
+
+Descriptive analysis of author collaboration network characteristics
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=15)
+```
+
+
+Institutional collaboration
+
+```{r}
+NetMatrix <- biblioNetwork(M, analysis = "collaboration",  network = "universities", sep = ";")
+net=networkPlot(NetMatrix,  n = 20, Title = "Institutional collaboration",type = "auto", size=4,size.cex=F,edgesize = 3,labelsize=1)
+```
+
+Descriptive analysis of edu collaboration network characteristics
+
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=15)
+```
+
+
+Countries collaborating on this set of bibliographic data
+
+```{r}
+M <- metaTagExtraction(M_scopus_csv, Field = "AU_CO", sep = ";")
+NetMatrix <- biblioNetwork(M, analysis = "collaboration",  network = "countries", sep = ";")
+net=networkPlot(NetMatrix,  n = dim(NetMatrix)[1], Title = "Country collaboration",type = "circle", size=10,size.cex=T,edgesize = 1,labelsize=0.6, cluster="none")
+```
+
+Descriptive analysis of country collaboration network characteristics
+
+```{r}
+netstat <- networkStat(NetMatrix)
+summary(netstat,k=15)
+```
