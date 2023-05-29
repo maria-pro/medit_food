@@ -68,6 +68,12 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#author-collaboration-network" id="toc-author-collaboration-network" class="nav-link" data-scroll-target="#author-collaboration-network">Author collaboration network</a></li>
   </ul></li>
+  <li><a href="#abstracts-analysis" id="toc-abstracts-analysis" class="nav-link" data-scroll-target="#abstracts-analysis">Abstracts analysis</a>
+  <ul class="collapse">
+  <li><a href="#topic-modelling" id="toc-topic-modelling" class="nav-link" data-scroll-target="#topic-modelling">Topic modelling</a></li>
+  <li><a href="#clustering" id="toc-clustering" class="nav-link" data-scroll-target="#clustering">Clustering</a></li>
+  <li><a href="#summarization" id="toc-summarization" class="nav-link" data-scroll-target="#summarization">Summarization</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -932,6 +938,643 @@ Main statistics about the network
  </code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="abstracts-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="abstracts-analysis">Abstracts analysis</h2>
+<section id="topic-modelling" class="level3">
+<h3 class="anchored" data-anchor-id="topic-modelling">Topic modelling</h3>
+<p>Papers with abstracts</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>            word    n
+1           diet 6922
+2  mediterranean 4563
+3        dietary 3456
+4         health 3191
+5           risk 2780
+6              p 2715
+7          study 2663
+8     associated 2575
+9      adherence 2418
+10       disease 2235
+11       studies 1978
+12       results 1933
+13       factors 1822
+14      physical 1801
+15      patients 1783
+16       quality 1774
+17          high 1762
+18        stress 1753
+19       effects 1699
+20           may 1686</code></pre>
+</div>
+</div>
+<p>Topic number</p>
+<p>fitting several models with different number of topics</p>
+<div class="cell">
+
+</div>
+<p>evaluate models trained on a sparse matrix</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 10
+      K topic_model exclusivity semantic_coherence eval_heldout     residual             bound lfact    lbound iterations
+  &lt;dbl&gt; &lt;list&gt;      &lt;list&gt;      &lt;list&gt;             &lt;list&gt;           &lt;list&gt;               &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+1    20 &lt;STM&gt;       &lt;dbl [20]&gt;  &lt;dbl [20]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2203706.  42.3 -2203664.         27
+2    40 &lt;STM&gt;       &lt;dbl [40]&gt;  &lt;dbl [40]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2170967. 110.  -2170857.         24
+3    50 &lt;STM&gt;       &lt;dbl [50]&gt;  &lt;dbl [50]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2162466. 148.  -2162318.         22
+4    60 &lt;STM&gt;       &lt;dbl [60]&gt;  &lt;dbl [60]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2154581. 189.  -2154392.         21
+5    70 &lt;STM&gt;       &lt;dbl [70]&gt;  &lt;dbl [70]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2148472. 230.  -2148241.         24
+6    80 &lt;STM&gt;       &lt;dbl [80]&gt;  &lt;dbl [80]&gt;         &lt;named list [4]&gt; &lt;named list [3]&gt; -2143757. 274.  -2143483.         23
+7   100 &lt;STM&gt;       &lt;dbl [100]&gt; &lt;dbl [100]&gt;        &lt;named list [4]&gt; &lt;named list [3]&gt; -2135437. 364.  -2135073.         32</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="descript_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>highest held-out likehood</p>
+<p>lowest residuals</p>
+<p>Semantic coherence is maximized when the most probable words in a given topic frequently co-occur together, and it’s a metric that correlates well with human judgment of topic quality. Having high semantic coherence is relatively easy, though, if you only have a few topics dominated by very common words, so you want to look at both semantic coherence and exclusivity of words to topics. It’s a tradeoff. Read more about semantic coherence in the original paper about it.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="descript_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>A topic model with 100 topics, 3177 documents and a 999 word dictionary.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 99,900 × 3
+   topic term      beta
+   &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt;
+ 1     1 10    6.43e- 6
+ 2     2 10    1.44e- 2
+ 3     3 10    3.36e-12
+ 4     4 10    1.17e- 3
+ 5     5 10    2.07e- 4
+ 6     6 10    2.35e-21
+ 7     7 10    9.93e- 4
+ 8     8 10    3.73e- 4
+ 9     9 10    5.34e- 9
+10    10 10    1.11e- 2
+# … with 99,890 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 317,700 × 3
+   document                           topic   gamma
+   &lt;chr&gt;                              &lt;int&gt;   &lt;dbl&gt;
+ 1 10.1001/archgenpsychiatry.2009.129     1 0.00250
+ 2 10.1001/archinte.167.11.1195           1 0.00173
+ 3 10.1001/archinte.167.22.2461           1 0.00158
+ 4 10.1001/jama.2009.1144                 1 0.00154
+ 5 10.1001/jama.2009.1146                 1 0.00177
+ 6 10.1001/jama.2019.4782                 1 0.00203
+ 7 10.1001/jama.2021.20178                1 0.00749
+ 8 10.1001/jamainternmed.2015.1668        1 0.00163
+ 9 10.1001/jamainternmed.2015.4838        1 0.00187
+10 10.1001/jamanetworkopen.2020.21701     1 0.00374
+# … with 317,690 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="descript_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 22%">
+<col style="width: 69%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Topic</th>
+<th style="text-align: right;">Expected topic proportion</th>
+<th style="text-align: left;">Top 7 terms</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Topic 63</td>
+<td style="text-align: right;">0.028</td>
+<td style="text-align: left;">diet, mediterranean, med, style, effect, adherence, high</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 93</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: left;">studies, evidence, trials, review, interventions, results, systematic</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 69</td>
+<td style="text-align: right;">0.024</td>
+<td style="text-align: left;">role, review, mechanisms, development, potential, play, discuss</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 98</td>
+<td style="text-align: right;">0.023</td>
+<td style="text-align: left;">treatment, management, therapy, interventions, effective, medicine, clinical</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 82</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: left;">associated, score, association, food, β, regression, associations</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 97</td>
+<td style="text-align: right;">0.019</td>
+<td style="text-align: left;">effects, polyphenols, compounds, properties, human, bioactive, beneficial</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 11</td>
+<td style="text-align: right;">0.017</td>
+<td style="text-align: left;">food, mediterranean, countries, traditional, health, well, cultural</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 15</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: left;">risk, factors, smoking, increased, cv, associated, prevalence</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 94</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: left;">diseases, aging, chronic, associated, health, related, healthy</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 37</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: left;">plant, can, products, foods, functional, important, considered</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 78</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: left;">foods, intake, vegetables, fruits, meat, whole, high</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 64</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: left;">fish, growth, species, feeding, time, different, results</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 46</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: left;">evidence, rights, reserved, elsevier, health, inc, research</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 9</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: left;">p, adherence, score, 0.001, questionnaire, scores, study</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 54</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: left;">95, ci, odds, confidence, association, ratio, hr</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 56</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: left;">stress, oxidative, damage, antioxidants, dna, 8, antioxidant</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 96</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: left;">nutritional, nutrition, status, knowledge, based, information, needs</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 16</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: left;">water, environment, environmental, conditions, human, small, production</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 24</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: left;">participants, adherence, years, cohort, baseline, higher, medi</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 62</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: left;">cardiovascular, cvd, mortality, risk, cause, events, heart</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 25</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: left;">antioxidant, activity, study, activities, acid, extract, glutathione</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 35</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: left;">adherence, students, university, study, questionnaire, mediterranean, spain</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 91</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: left;">authors, switzerland, licensee, basel, mdpi, copyright2021, muscle</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 23</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">trial, intervention, study, participants, outcomes, primary, controlled</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 84</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">dietary, pattern, people, objectives, effects, among, evaluate</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 47</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">olive, oil, virgin, mediterranean, oils, phenolic, source</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 70</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">disease, may, chronic, associated, including, burden, kidney</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 41</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">health, self, healthy, change, behaviors, interventions, care</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 95</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">weight, obesity, loss, overweight, obese, body, kg</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 61</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">months, intervention, baseline, 6, follow, 12, changes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 53</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: left;">cognitive, decline, function, impairment, cognition, memory, mild</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 65</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">physical, activity, pa, time, sedentary, active, levels</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 59</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">inflammatory, inflammation, anti, chronic, low, systemic, grade</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 87</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">can, metabolism, mitochondrial, dysfunction, cellular, processes, alterations</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 76</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">1, 0, 2, 3, 5, 4, years</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 31</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">elderly, living, status, characteristics, successful, 65, people</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 73</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">patients, coronary, heart, cardiac, patient, rate, results</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 38</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">depression, symptoms, depressive, association, significant, major, scale</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 49</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">lifestyle, can, healthy, habits, modification, towards, unhealthy</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 88</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">intervention, exercise, program, control, training, based, improvement</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 71</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">european, health, population, national, italy, countries, level</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 51</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">body, mass, bmi, index, fitness, waist, anthropometric</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 50</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">p, 0.05, 0.001, 0.01, significant, compared, ml</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 33</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">fat, diets, high, diet, western, postprandial, rich</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 45</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">quality, life, qol, improve, better, impact, overall</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 67</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">fatty, acids, acid, 3, omega, polyunsaturated, may</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 99</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">part, springer, findings, purpose, recent, nature, media</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 42</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">metabolic, syndrome, insulin, mets, resistance, glucose, obesity</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 30</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">cells, cell, species, oxygen, reactive, ros, production</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 13</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">patterns, healthy, dietary, index, 2010, associated, ahei</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 44</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: left;">diabetes, type, 2, society, mellitus, t2dm, italian</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 74</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">psychological, study, population, distress, among, health, results</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 89</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">levels, plasma, lipid, ldl, serum, blood, concentrations</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 57</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">blood, endothelial, pressure, function, vascular, atherosclerosis, cardiovascular</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 68</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">intake, day, energy, g, per, total, daily</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 58</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">subjects, test, compared, healthy, significantly, controls, t</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 60</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">consumption, alcohol, moderate, wine, red, beneficial, also</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 10</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: left;">effects, 1, induced, effect, reduced, mediated, resveratrol</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 86</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">group, groups, control, francis, taylor, study, limited</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 28</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">gut, microbiota, metabolites, composition, human, can, potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 19</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">health, hrqol, related, mental, 36, physical, scores</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 77</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">social, support, family, people, research, psychosocial, study</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 18</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">ad, alzheimer’s, disease, neurodegenerative, may, progression, increasing</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 40</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">age, related, old, years, ages, sex, data</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 81</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">expression, gene, genes, related, proteins, may, pathways</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 72</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: left;">md, adherence, high, study, higher, significant, low</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 75</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">ageing, related, patterns, evidence, dietary, biological, nutrients</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 27</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">adults, older, frailty, community, disability, functional, aged</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 5</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">women, men, sexual, sex, female, may, function</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 55</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">disorders, anxiety, mental, mood, depression, health, disorder</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 90</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">children, adolescents, school, adherence, high, study, years</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 3</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">liver, nafld, hepatic, fatty, non, disease, fat</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 85</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">eating, positive, negative, emotional, affect, perceived, behavior</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 14</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">individuals, females, males, within, two, m, likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 6</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: left;">pd, disorder, features, clinical, neurodegenerative, symptoms, common</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 8</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">brain, health, microbiome, can, impact, well, function</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 2</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">ht, 2, induced, h, expression, protein, l</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 83</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">biomarkers, 6, il, protein, markers, inflammatory, α</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 80</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">d, vitamin, e, supplements, c, vitamins, intake</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 22</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">cholesterol, high, low, density, c, lipoprotein, hdl</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 79</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">pm, vs, mean, respectively, years, kg, sd</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 43</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">prevention, stroke, primary, secondary, regarding, one, development</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 4</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">dementia, mci, risk, people, protective, onset, strategies</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 1</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">s, author, published, copyrightthe, 2020, press, work</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 29</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: left;">diet, mind, dash, hypertension, stop, approaches, diets</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 92</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">system, immune, response, intestinal, effects, also, changes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 21</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">evoo, extra, virgin, oil, nuts, olive, supplemented</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 17</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">cancer, breast, incidence, diagnosis, may, long, well</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 12</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">habits, changes, lockdown, increase, value, increased, study</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 20</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">pain, term, two, chronic, long, reported, low</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 48</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">et, al, use, de, terms, provided, article</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 52</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">sleep, poor, quality, duration, associated, study, lower</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 36</td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: left;">meddiet, adherence, participants, predimed, low, non, high</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 26</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: left;">n, 3, pufa, intakes, fish, high, ratio</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 32</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: left;">physiological, bone, affect, density, health, increased, associated</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 66</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: left;">19, covid, pandemic, post, severe, health, may</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 34</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: left;">pregnancy, maternal, outcomes, women, low, early, effects</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 39</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: left;">ms, multiple, severity, disability, higher, related, symptoms</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Topic 7</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: left;">asthma, control, studies, reported, prevalence, function, last</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Topic 100</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: left;">health, promotion, among, well, also, following, may</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="clustering" class="level3">
+<h3 class="anchored" data-anchor-id="clustering">Clustering</h3>
+</section>
+<section id="summarization" class="level3">
+<h3 class="anchored" data-anchor-id="summarization">Summarization</h3>
 </section>
 </section>
 
