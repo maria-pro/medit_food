@@ -1,0 +1,568 @@
+---
+title: "Med lifestyle and mental health"
+author: "Maria"
+format: html
+toc: true
+toc-depth: 3
+code-fold: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Understanding the link between ML and MH
+
+' Components of MidLifStyle as identified in
+
+Diolintzi, A., Panagiotakos, D., & Sidossis, L. (2019). From Mediterranean diet to Mediterranean lifestyle: A narrative review. Public Health Nutrition, 22(14), 2703-2713. [doi:10.1017/S1368980019000612](https://www.cambridge.org/core/journals/public-health-nutrition/article/from-mediterranean-diet-to-mediterranean-lifestyle-a-narrative-review/71D23D59CF471F0E67C267F073D8BBE1)
+
+Result: despite that features of the ML could contribute to other wellness dimensions, there are no studies exploring the effect this healthy lifestyle could confer to them.
+
+This is underresearched topic and there are limited studies available to isolate the direct effect of MidLifeStyle on MH. However, the following important points have been documented
+
+![Components of MidLifStyle-MH (identified in topic modelling)](4_topics.png)
+
+```{r}
+library(bibliometrix)
+library(tidyverse)
+library(tidytext)
+library(RColorBrewer)
+library(wordcloud)
+theme_set(theme_minimal())
+options("scipen"=100, "digits"=2)
+
+```
+
+## Publication years
+
+```{r}
+lit<-read_csv("covidence.csv")%>%janitor::clean_names()
+
+lit%>% filter(!is.na(published_year))%>%
+  count(published_year)%>%
+  ggplot(
+  aes(x=factor(published_year), n, fill=factor(published_year))
+  )+
+  geom_col() +theme(
+    legend.position="none",
+    panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+
+  scale_x_discrete(
+  breaks = c(1994, 2000, seq(2008, 2023, by=1))
+)+
+  scale_y_continuous(
+  breaks = seq(0, 20, by=2))+
+  labs(x="",
+       y="Number of papers")
+  
+  lit%>% count(published_year)
+```
+
+## Wordclouds:
+
+based on titles
+
+```{r}
+titles<-lit%>%
+ select(title) %>%
+ unnest_tokens(word, title)%>% count(word, sort=TRUE)%>%
+  anti_join(get_stopwords())
+
+set.seed(1234) # for reproducibility 
+wordcloud(words = titles$word, freq = titles$n, min.freq = 1, 
+          max.words=100, random.order=FALSE, rot.per=0.35,            
+          colors=brewer.pal(12, "Paired"))
+
+```
+
+Based on abstract
+
+```{r}
+abstracts <-
+  lit%>%
+  select(abstract, ref, published_year)%>%
+  unnest_tokens(
+    output=word,
+    input=abstract,
+    to_lower=TRUE,
+    ) %>%
+  anti_join(get_stopwords())%>%
+  add_count(word) %>%
+  distinct(word,n)%>%
+  filter(!word %in% c(
+    "p",
+    "95",
+    "ci",
+    "s",
+    "higher",
+    "lower",
+    "0.001",
+    "3",
+    "low",
+    "high",
+    "lowest",
+    "highest",
+    "9",
+    "0.03",
+    "7",
+    "0.04",
+    "10",
+    "three",
+    "5",
+    "2010",
+    "2015",
+    "2020",
+    "65",
+    "b",
+    "4",
+    "11",
+    "less",
+    "more",
+    "one",
+    "2",
+    "0.01",
+    "d",
+    "whether",
+    "copyright",
+    "19",
+    "objective",
+    "aim",
+    "ds",
+    "1",
+    "two",
+    "6",
+    "0.05",
+    "r",
+    "n"
+  )
+           )
+
+
+set.seed(1234) # for reproducibility 
+wordcloud(words = abstracts$word, freq = abstracts$n, min.freq = 1, 
+          max.words=100, random.order=FALSE, rot.per=0.35,            
+          colors=brewer.pal(8, "Paired"))
+```
+## Text network
+
+To understand the concepts behind MidLifStyle and MH and connections between we conducted network analysis of the collected papers.
+
+The analysis was done using the `igraph` package which uses the [graph theory](https://en.wikipedia.org/wiki/Graph_theory#:~:text=In%20mathematics%2C%20graph%20theory%20is,also%20called%20links%20or%20lines) . as the foundation.
+
+The located references were analysed to extract the abstracts and preprocess the text of the abstracts. In particular, we employed traditional text cleaning steps (such as convertion to lower case, removal of stop words, etc.), stemming procedure to identify word stems and reduce repetitions in the data and tokenization of the data. Given the use of network analysis, the focus was on identifying and selecting nouns and compound nouns for analysis.
+
+Such approach is informed by prior literature (e.g. Rule, Cointet, and Bearman 2015), that suggests that creating text networks based on only nouns or noun phrases provides better results for mapping the topical content of a text than other parts of speech, such as verbs or adjectives.
+
+The next step included converting the text to a dataframe where individual words were extracted and assigned to the grouping factor. At this initial stage of exploration, the groups were set at the title level. Further analysis using clustering of documents and identification of distinctive themes that the documents (=papers) belong to would allow group documents across theme to develop a network explaining the relationships between individual topics within the MidLifStyle-MH continuum and allocation of specific papers to each subdomain. Tokenization of the abstracts allowed create [term-document matrix](https://en.wikipedia.org/wiki/Document-term_matrix#:~:text=A%20document%2Dterm%20matrix%20is,and%20columns%20correspond%20to%20terms.) to create nodes (documents), clusters (grouping of documents)
+
+The matrix allowed establishing co-occurrance of words. For the network analysis the tokenized words and document titles was specified as nodes sets to produce a [two-mode network](https://toreopsahl.com/tnet/two-mode-networks/defining-two-mode-networks/).
+
+Based on the developed dataframe the study generated a weighted adjacency matrix, which is a square matrix where the rows and columns correspond to the groups (=documents here or topics later). The cells of the adjacency matrix are the transposed to produce the \[term-frequency inverse-document frequency\] (TFIDF) (https://en.wikipedia.org/wiki/Tf%E2%80%93idf) for overlapping terms between documents. The procedure described in Bail (2016).
+
+On the next step, we used the TFIDF matrix to generate the network diagram where nodes are colored by their cluster or modularity class. As in many other cases, text networks is very dense (i.e. networks include a very large number of edges because most documents share at least one word). Visualizing text networks therefore creates inherent challenges due to cluttering and such dense networks. To remedy this, we employed a "network backbone" technique to delete edges using a disparity filter algorithm to trim edges that are not informative. We used the default parameter recommended in the literature where a tuning parameter alpha.
+
+```{r}
+
+library(disparityfilter)
+VisTextNetD3_mp<-function(text_network, alpha=.25, height = NULL, width = NULL, bound = FALSE, zoom = FALSE, charge = -30){
+  
+  
+  
+  if (igraph::has.multiple(text_network))
+    stop("This disparity filter does not yet support multiple edges")
+  if (is.null(V(text_network)$name)){
+    text_network <- set_vertex_attr(text_network, "name", value = as.character(1:vcount(text_network)))
+  }
+  
+  #create network backbone 
+  
+  e <- cbind(igraph::as_data_frame(text_network)[, 1:2 ], weight = E(text_network)$weight)
+  
+  # in
+  w_in <- graph.strength(text_network, mode = "in")
+  w_in <- data.frame(to = names(w_in), w_in, stringsAsFactors = FALSE)
+  k_in <- degree(text_network, mode = "in")
+  k_in <- data.frame(to = names(k_in), k_in, stringsAsFactors = FALSE)
+  
+  e_in <- e %>%
+    left_join(w_in, by = "to") %>%
+    left_join(k_in, by = "to") %>%
+    mutate(alpha_in = (1-(weight/w_in))^(k_in-1))
+  
+  # out
+  
+  w_out <- graph.strength(text_network, mode = "out")
+  w_out <- data.frame(from = names(w_out), w_out, stringsAsFactors = FALSE)
+  k_out <- degree(text_network, mode = "out")
+  k_out <- data.frame(from = names(k_out), k_out, stringsAsFactors = FALSE)
+  
+  e_out <- e %>%
+    left_join(w_out, by = "from") %>%
+    left_join(k_out, by = "from") %>%
+    mutate(alpha_out = (1-(weight/w_out))^(k_out-1))
+  
+  e_full <- left_join(e_in, e_out, by = c("from", "to", "weight"))
+  
+  e_full <- e_full %>%
+    mutate(alpha = ifelse(alpha_in < alpha_out, alpha_in, alpha_out)) %>%
+    select(from, to, alpha)
+  
+  E(text_network)$alpha <- e_full$alpha
+  
+  pruned <- delete.edges(text_network, which(E(text_network)$alpha >= alpha))
+  pruned <- delete.vertices(pruned, which(degree(pruned) == 0))
+  
+  
+  # make degree for labelling most popular nodes
+  V(pruned)$degree <- degree(pruned)
+  
+  # remove isolates
+  isolates <- V(pruned)[degree(pruned)==0]
+  pruned <- delete.vertices(pruned, isolates)
+  
+  
+  lc <- cluster_louvain(pruned)
+  members <- membership(lc)
+  text_d3<-igraph_to_networkD3(pruned, group=members, what = "both")
+  forceNetwork(Links = text_d3$links, Nodes = text_d3$nodes,
+               Source = 'source', Target = 'target', 
+               NodeID = 'name', Group="group", 
+               height = height, width = width, 
+               bounded = bound, 
+               zoom = zoom,
+               fontSize = 30,
+               charge = charge)
+  
+}
+
+#library(devtools)
+#install_github("cbail/textnets")
+library(textnets)
+
+prepped_abstracts <- textnets::PrepText(lit, groupvar = "title", textvar = "abstract", node_type = "groups", tokenizer = "words", pos = "nouns", remove_stop_words = TRUE, compound_nouns = TRUE)
+
+text_network <- CreateTextnet(prepped_abstracts)
+
+vis <- VisTextNetD3_mp(text_network,
+                    height=1000,
+                    width=1400,
+                    bound=FALSE,
+                    zoom=TRUE,
+                    charge=-30,
+                    alpha=0.05)
+
+vis
+
+#library(htmlwidgets)
+#saveWidget(vis, "text_network.html")
+
+```
+
+### View [text_network.html](text_network.html)
+
+To identify latent themes across texts we group documents according to their similarity within the text networks. We employed the [Louvain community detection algorithm](https://en.wikipedia.org/wiki/Louvain_method) to automatically convert the edge weights in the developed graph and determine the number of clusters within the provided network. This resulted in assignment of each document to the cluster or "modularity" class to which each document or word has been assigned.
+
+```{r}
+text_communities <- TextCommunities(text_network)
+```
+
+This is a snippets of the assignment:
+
+```{r}
+head(text_communities)
+```
+
+To understand clusters we looked closely at the terms which are driving cluster assignment. The output provides the words with the 10 highest TFIDF frequencies within each cluster or modularity class.
+
+```{r}
+top_words_modularity_classes <- InterpretText(text_network, prepped_abstracts)
+#head(top_words_modularity_classes)
+```
+
+## Topic models
+
+Topic models aim to find topics (= operationalized as bundles of correlating terms) in documents to understand main aspects of the text.
+
+Topic models is a statistical model that is use to identify more or less abstract topics in a given selection of documents. Topic models are particularly useful in understanding hidden semantic structures in textual data. Topics can be represented as networks of collocation (=co-occurring)  terms across documents. Such co-occurrence signals belonging to the same semantic domain (or topic). This assumes that, if a document is about a certain topic, one would expect words, that are related to that topic, to appear in the document more often than in documents that deal with other topics. 
+
+Topic models are probabilistic topic models, due to use of statistical algorithms for discovering the latent semantic structures using text. 
+
+```{r}
+# create corpus object
+
+library(tm)
+library(topicmodels)
+library(reshape2)
+library(ggplot2)
+library(wordcloud)
+
+library(SnowballC)
+library(lda)
+library(ldatuning)
+
+corpus_lit<-lit%>%
+  rename(
+    text=abstract,
+    doc_id=title
+  )
+corpus <- Corpus(DataframeSource(corpus_lit))
+english_stopwords <- readLines("https://slcladal.github.io/resources/stopwords_en.txt", encoding = "UTF-8")
+# Preprocessing chain
+processedCorpus <- tm_map(corpus, content_transformer(tolower))
+processedCorpus <- tm_map(processedCorpus, removeWords, english_stopwords)
+processedCorpus <- tm_map(processedCorpus, removePunctuation, preserve_intra_word_dashes = TRUE)
+processedCorpus <- tm_map(processedCorpus, removeNumbers)
+processedCorpus <- tm_map(processedCorpus, stemDocument, language = "en")
+processedCorpus <- tm_map(processedCorpus, stripWhitespace)
+
+
+minimumFrequency <- 1
+DTM <- DocumentTermMatrix(processedCorpus, control = list(bounds = list(global = c(minimumFrequency, Inf))))
+# have a look at the number of documents and terms in the matrix
+dim(DTM)
+
+# due to vocabulary pruning, we have empty rows in our DTM
+# LDA does not like this. So we remove those docs from the
+# DTM and the metadata
+sel_idx <- slam::row_sums(DTM) > 0
+DTM <- DTM[sel_idx, ]
+textdata <- lit[sel_idx, ]
+
+```
+
+```{r}
+# create models with different number of topics
+result <- ldatuning::FindTopicsNumber(
+  DTM,
+  topics = seq(from = 2, to = 20, by = 1),
+  metrics = c("CaoJuan2009",  "Deveaud2014"),
+  method = "Gibbs",
+  control = list(seed = 77),
+  verbose = TRUE
+)
+
+
+ldatuning::FindTopicsNumber_plot(result)
+```
+
+**Number of topics in the collected sample is 4**
+
+```{r}
+# number of topics
+K <- 4
+# set random number generator seed
+set.seed(9161)
+# compute the LDA model, inference via 1000 iterations of Gibbs sampling
+topicModel <- LDA(DTM, K, method="Gibbs", control=list(iter = 500, verbose = 25))
+```
+
+```{r}
+# have a look a some of the results (posterior distributions)
+tmResult <- posterior(topicModel)
+# format of the resulting object
+attributes(tmResult)
+```
+
+```{r}
+terms(topicModel, 10)
+```
+
+```{r}
+exampleTermData <- terms(topicModel, 10)
+exampleTermData[, 1:4]
+```
+
+```{r}
+top5termsPerTopic <- terms(topicModel, 5)
+topicNames <- apply(top5termsPerTopic, 2, paste, collapse=" ")
+```
+
+### Topic 1
+
+```{r}
+# visualize topics as word cloud
+topicToViz <- 1 # change for your own topic of interest
+#topicToViz <- grep('depress', topicNames)[1] # Or select a topic by a term contained in its name
+# select to 40 most probable terms from the topic by sorting the term-topic-probability vector in decreasing order
+top40terms <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+words <- names(top40terms)
+# extract the probabilites of each of the 40 terms
+probabilities <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+# visualize the terms as wordcloud
+#mycolors <- brewer.pal(8, "Dark2")
+wordcloud(words, probabilities, random.order = FALSE, colors=brewer.pal(8, "Paired"))
+```
+
+### Topic 2
+
+```{r}
+# visualize topics as word cloud
+topicToViz <- 2 # change for your own topic of interest
+#topicToViz <- grep('depress', topicNames)[1] # Or select a topic by a term contained in its name
+# select to 40 most probable terms from the topic by sorting the term-topic-probability vector in decreasing order
+top40terms <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+words <- names(top40terms)
+# extract the probabilites of each of the 40 terms
+probabilities <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+# visualize the terms as wordcloud
+#mycolors <- brewer.pal(8, "Dark2")
+wordcloud(words, probabilities, random.order = FALSE, colors=brewer.pal(8, "Paired"), scale=c(2, .5))
+```
+
+### Topic 3
+
+```{r}
+# visualize topics as word cloud
+topicToViz <- 3 # change for your own topic of interest
+#topicToViz <- grep('depress', topicNames)[1] # Or select a topic by a term contained in its name
+# select to 40 most probable terms from the topic by sorting the term-topic-probability vector in decreasing order
+top40terms <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+words <- names(top40terms)
+# extract the probabilites of each of the 40 terms
+probabilities <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+# visualize the terms as wordcloud
+#mycolors <- brewer.pal(8, "Dark2")
+wordcloud(words, probabilities, random.order = FALSE, colors=brewer.pal(8, "Paired"), scale=c(2, .5))
+```
+
+### Topic 4
+
+```{r}
+# visualize topics as word cloud
+topicToViz <- 4 # change for your own topic of interest
+#topicToViz <- grep('depress', topicNames)[1] # Or select a topic by a term contained in its name
+# select to 40 most probable terms from the topic by sorting the term-topic-probability vector in decreasing order
+top40terms <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+words <- names(top40terms)
+# extract the probabilites of each of the 40 terms
+probabilities <- sort(tmResult$terms[topicToViz,], decreasing=TRUE)[1:50]
+# visualize the terms as wordcloud
+#mycolors <- brewer.pal(8, "Dark2")
+wordcloud(words, probabilities, random.order = FALSE, colors=brewer.pal(8, "Paired"), scale=c(2, .5))
+```
+
+```{r}
+exampleIds <- c(1, 20, 40)
+lapply(corpus[exampleIds], as.character)
+```
+
+
+
+
+```{r}
+text<-lit$abstract
+corpus = tm::Corpus(tm::VectorSource(text))
+# Cleaning up
+# Handling UTF-8 encoding problem from the dataset
+#corpus.cleaned <- tm::tm_map(corpus, function(x) iconv(x, to='UTF-8-MAC', sub='byte')) 
+
+corpus.cleaned <- tm::tm_map(corpus, tm::removeWords, tm::stopwords('english')) # Removing stop-words
+
+corpus.cleaned <- tm::tm_map(corpus.cleaned, tm::stemDocument, language = "english") # Stemming the words 
+
+corpus.cleaned <- tm::tm_map(corpus.cleaned, tm::stripWhitespace) # Trimming excessive whitespaces
+
+
+# Building the feature matrices
+tdm <- tm::DocumentTermMatrix(corpus.cleaned)
+tdm.tfidf <- tm::weightTfIdf(tdm)
+# We remove A LOT of features. R is natively very weak with high dimensional matrix
+tdm.tfidf <- tm::removeSparseTerms(tdm.tfidf, 0.999)
+# There is the memory-problem part
+# - Native matrix isn't "sparse-compliant" in the memory
+# - Sparse implementations aren't necessary compatible with clustering algorithms
+tfidf.matrix <- as.matrix(tdm.tfidf)
+# Cosine distance matrix (useful for specific clustering algorithms)
+dist.matrix = proxy::dist(tfidf.matrix, method = "cosine")
+
+clustering.kmeans <- kmeans(tfidf.matrix, 4)
+
+clustering.hierarchical <- hclust(dist.matrix, method = "ward.D2")
+
+clustering.dbscan <- dbscan::hdbscan(dist.matrix, minPts = 10)
+
+master.cluster <- clustering.kmeans$cluster
+slave.hierarchical <- cutree(clustering.hierarchical, k = 10)
+slave.dbscan <- clustering.dbscan$cluster
+# Preparing the stacked clustering
+stacked.clustering <- rep(NA, length(master.cluster)) 
+names(stacked.clustering) <- 1:length(master.cluster)
+
+
+
+for (cluster in unique(master.cluster)) {
+  indexes = which(master.cluster == cluster, arr.ind = TRUE)
+  slave1.votes <- table(slave.hierarchical[indexes])
+  slave1.maxcount <- names(slave1.votes)[which.max(slave1.votes)]
+  
+  slave1.indexes = which(slave.hierarchical == slave1.maxcount, arr.ind = TRUE)
+  slave2.votes <- table(slave.dbscan[indexes])
+  slave2.maxcount <- names(slave2.votes)[which.max(slave2.votes)]
+  
+  stacked.clustering[indexes] <- slave2.maxcount
+}
+
+points <- cmdscale(dist.matrix, k = 4) # Running the PCA
+palette <- colorspace::diverge_hcl(10) # Creating a color palette
+previous.par <- par(mfrow=c(2,2), mar = rep(1.5, 4)) # partitionning the plot space
+plot(points,
+     main = 'K-Means clustering',
+     col = as.factor(master.cluster),
+     mai = c(0, 0, 0, 0),
+     mar = c(0, 0, 0, 0),
+     xaxt = 'n', yaxt = 'n',
+     xlab = '', ylab = '')
+plot(points,
+     main = 'Hierarchical clustering',
+     col = as.factor(slave.hierarchical),
+     mai = c(0, 0, 0, 0),
+     mar = c(0, 0, 0, 0),
+     xaxt = 'n', yaxt = 'n',
+     xlab = '', ylab = '')
+plot(points,
+     main = 'Density-based clustering',
+     col = as.factor(slave.dbscan),
+     mai = c(0, 0, 0, 0),
+     mar = c(0, 0, 0, 0),
+     xaxt = 'n', yaxt = 'n',
+     xlab = '', ylab = '')
+plot(points,
+     main = 'Stacked clustering',
+     col = as.factor(stacked.clustering),
+     mai = c(0, 0, 0, 0),
+     mar = c(0, 0, 0, 0),
+     xaxt = 'n', yaxt = 'n',
+     xlab = '', ylab = '')
+
+```
+
+
+
+```{r eval=FALSE}
+library(rcrossref)
+library(usethis)
+library(tidyverse)
+library(listviewer)
+
+
+doi_list<-lit%>%filter(!is.na(doi))
+
+doi_oa<-roadoi::oadoi_fetch(dois = doi_list$doi,
+                    email = "maria.prokofieva@gmail.com")
+
+
+doi_oa%>%write_rds("doi_oa.rds")
+
+doi_oa<-read_rds("doi_oa.rds")
+
+doi_oa%>%unnest("best_oa_location")
+
+doi_oa%>%filter(is_oa==TRUE)
+
+test<-doi_oa %>%
+    purrr::pluck("best_oa_location")
+
+
+
+```
